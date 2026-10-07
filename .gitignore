@@ -1,0 +1,15 @@
+data/
+.env
+.env.*
+!.env.example
+work/
+node_modules/
+.wrangler/
+cloudflare/public/
+cloudflare/import.sql
+.dev.vars
+.dev.vars.*
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*

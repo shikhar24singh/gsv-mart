@@ -1,0 +1,22 @@
+{
+  "name": "gsv-mart",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "admin:create": "node create-admin.js",
+    "test": "node --test backend.test.js",
+    "cf:build": "node cloudflare/build.cjs",
+    "cf:dev": "npm run cf:build && wrangler dev",
+    "cf:deploy": "npm run cf:build && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.148.0"
+  },
+  "overrides": {
+    "sharp": "0.35.5"
+  }
+}

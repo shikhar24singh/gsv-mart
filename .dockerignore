@@ -1,0 +1,9 @@
+data
+work
+.git
+.env
+.env.*
+node_modules
+*.sqlite*
+*.zip
+*.tar*

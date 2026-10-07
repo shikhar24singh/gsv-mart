@@ -1,0 +1,51 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { mkdtempSync, rmSync } = require('node:fs');
+const { tmpdir } = require('node:os');
+const { join } = require('node:path');
+const { once } = require('node:events');
+const { createApp } = require('./server');
+const { hashPassword } = require('./database');
+
+test('admin authorization, validation, sessions and persistent catalogue', async () => {
+  const directory=mkdtempSync(join(tmpdir(),'gsv-backend-'));
+  let app=createApp({dataDir:directory,origin:'http://localhost:3000',secure:false});
+  const start=async()=>{app.server.listen(0,'127.0.0.1');await once(app.server,'listening');return `http://127.0.0.1:${app.server.address().port}`;};
+  let base=await start();
+  const request=(path,method='GET',body,headers={})=>fetch(base+path,{method,headers:{'Origin':'http://localhost:3000','Content-Type':'application/json',...headers},body:body===undefined?undefined:JSON.stringify(body)});
+  const product={name:'Test decor',category:'Home Decor',price:899,description:'A test catalogue entry.',image:'',amazon:'https://www.amazon.in/dp/example',flipkart:'',featured:false};
+  try {
+    app.db.prepare('INSERT INTO admins(email,password) VALUES (?,?)').run('admin@example.com',hashPassword('test-password-12345'));
+    assert.equal((await request('/api/products')).status,200);
+    assert.equal((await request('/healthz')).status,200);
+    assert.equal((await request('/api/products','POST',product)).status,401);
+    assert.equal((await request('/server.js')).status,404);
+    assert.equal((await request('/data/gsv.sqlite')).status,404);
+    assert.equal((await request('/api/auth/login','POST',{email:'admin@example.com',password:'incorrect'})).status,401);
+    let response=await request('/api/auth/login','POST',{email:'admin@example.com',password:'test-password-12345'});
+    assert.equal(response.status,200);
+    const cookie=response.headers.get('set-cookie');assert.match(cookie,/HttpOnly/);assert.match(cookie,/SameSite=Strict/);
+    const {csrf}=await response.json();const headers={'Cookie':cookie.split(';')[0],'X-CSRF-Token':csrf};
+    assert.equal((await request('/api/uploads','POST',{})).status,401);
+    const upload=async bytes=>fetch(base+'/api/uploads',{method:'POST',headers:{...headers,Origin:'http://localhost:3000','Content-Type':'image/jpeg'},body:bytes});
+    assert.equal((await upload(Buffer.from('invalid file'))).status,400);
+    const photo=await upload(Buffer.from([255,216,255,224,255,217]));assert.equal(photo.status,201);
+    const uploaded=await photo.json();assert.equal((await request(uploaded.image)).headers.get('content-type'),'image/jpeg');
+    const withPhoto=await request('/api/products','POST',{...product,image:uploaded.image},headers);assert.equal(withPhoto.status,201);
+    const photoProduct=(await withPhoto.json()).product;
+    assert.equal((await request('/api/products/'+photoProduct.id,'DELETE',undefined,headers)).status,200);
+    assert.equal((await request('/api/products','POST',product,{'Cookie':headers.Cookie})).status,403);
+    assert.equal((await request('/api/products','POST',product,{...headers,Origin:'https://evil.example'})).status,403);
+    assert.equal((await request('/api/products','POST',{...product,amazon:'javascript:alert(1)'},headers)).status,400);
+    assert.equal((await request('/api/products','POST',{...product,category:'Electronics'},headers)).status,400);
+    response=await request('/api/products','POST',product,headers);assert.equal(response.status,201);
+    const {product:saved}=await response.json();
+    response=await request('/api/products/'+saved.id,'PUT',{...product,name:'Updated decor'},headers);assert.equal(response.status,200);
+    await new Promise(resolve=>app.server.close(resolve));
+    app=createApp({dataDir:directory,origin:'http://localhost:3000',secure:false});base=await start();
+    const catalogue=await (await request('/api/products')).json();assert.equal(catalogue.products.find(p=>p.id===saved.id).name,'Updated decor');
+    assert.equal((await request('/api/products/'+saved.id,'DELETE',undefined,headers)).status,200);
+    assert.equal((await request('/api/auth/logout','POST',{},headers)).status,200);
+    assert.equal((await request('/api/products','POST',product,headers)).status,401);
+  } finally {await new Promise(resolve=>app.server.close(resolve));rmSync(directory,{recursive:true,force:true});}
+});

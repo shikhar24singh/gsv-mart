@@ -1,0 +1,90 @@
+[
+  {
+    "id": "gsv-01",
+    "name": "The slow-morning mug",
+    "category": "Kitchen",
+    "price": 649,
+    "description": "A weighty ceramic mug for unhurried coffee, tea, and everything in between.",
+    "image": "",
+    "amazon": "https://www.amazon.in/s?k=ceramic+coffee+mug",
+    "flipkart": "https://www.flipkart.com/search?q=ceramic%20coffee%20mug",
+    "featured": true
+  },
+  {
+    "id": "gsv-02",
+    "name": "Soft light table lamp",
+    "category": "Home & Living",
+    "price": 1899,
+    "description": "A warm, mellow glow for the corners you love coming home to.",
+    "image": "",
+    "amazon": "https://www.amazon.in/s?k=ceramic+table+lamp",
+    "flipkart": "https://www.flipkart.com/search?q=table%20lamp",
+    "featured": false
+  },
+  {
+    "id": "gsv-03",
+    "name": "Little things organiser",
+    "category": "Home & Living",
+    "price": 499,
+    "description": "A tidy home for all those little bits that never quite have a place.",
+    "image": "",
+    "amazon": "https://www.amazon.in/s?k=wooden+desk+organiser",
+    "flipkart": "https://www.flipkart.com/search?q=desk%20organiser",
+    "featured": false
+  },
+  {
+    "id": "gsv-04",
+    "name": "Weekend carry-all",
+    "category": "Accessories",
+    "price": 999,
+    "description": "Room for the essentials, with a soft shape that goes everywhere.",
+    "image": "",
+    "amazon": "https://www.amazon.in/s?k=canvas+tote+bag",
+    "flipkart": "https://www.flipkart.com/search?q=canvas%20tote%20bag",
+    "featured": false
+  },
+  {
+    "id": "gsv-05",
+    "name": "Soft-touch cushion cover",
+    "category": "Textiles",
+    "price": 799,
+    "description": "A little texture and a softer landing for your favourite seat.",
+    "image": "",
+    "amazon": "https://www.amazon.in/s?k=decorative+cushion+cover",
+    "flipkart": "https://www.flipkart.com/search?q=decorative%20cushion%20cover",
+    "featured": true
+  },
+  {
+    "id": "gsv-06",
+    "name": "Calm start candle",
+    "category": "Home & Living",
+    "price": 599,
+    "description": "A gentle, warm scent to make a slow evening feel like a small ritual.",
+    "image": "",
+    "amazon": "https://www.amazon.in/s?k=soy+scented+candle",
+    "flipkart": "https://www.flipkart.com/search?q=scented%20candle",
+    "featured": false
+  },
+  {
+    "id": "gsv-07",
+    "name": "Sunday serving bowl",
+    "category": "Kitchen",
+    "price": 899,
+    "description": "Made for the centre of the table, from breakfast fruit to late-night snacks.",
+    "image": "",
+    "amazon": "https://www.amazon.in/s?k=ceramic+serving+bowl",
+    "flipkart": "https://www.flipkart.com/search?q=ceramic%20serving%20bowl",
+    "featured": false
+  },
+  {
+    "id": "gsv-08",
+    "name": "Archway accent mirror",
+    "category": "Home Decor",
+    "price": 1499,
+    "description": "A sculptural little mirror that brightens a wall and opens up a room.",
+    "image": "",
+    "amazon": "https://www.amazon.in/s?k=arched+wall+mirror+decor",
+    "flipkart": "https://www.flipkart.com/search?q=arched%20wall%20mirror%20decor",
+    "featured": false
+  }
+]

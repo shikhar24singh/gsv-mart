@@ -1,16 +1,6 @@
-const starterProducts = [
-  {id:'gsv-01',name:'The slow-morning mug',category:'Kitchen',price:649,description:'A weighty ceramic mug for unhurried coffee, tea, and everything in between.',image:'',amazon:'https://www.amazon.in/s?k=ceramic+coffee+mug',flipkart:'https://www.flipkart.com/search?q=ceramic%20coffee%20mug',featured:true},
-  {id:'gsv-02',name:'Soft light table lamp',category:'Home & Living',price:1899,description:'A warm, mellow glow for the corners you love coming home to.',image:'',amazon:'https://www.amazon.in/s?k=ceramic+table+lamp',flipkart:'https://www.flipkart.com/search?q=table%20lamp',featured:false},
-  {id:'gsv-03',name:'Little things organiser',category:'Home & Living',price:499,description:'A tidy home for all those little bits that never quite have a place.',image:'',amazon:'https://www.amazon.in/s?k=wooden+desk+organiser',flipkart:'https://www.flipkart.com/search?q=desk%20organiser',featured:false},
-  {id:'gsv-04',name:'Weekend carry-all',category:'Accessories',price:999,description:'Room for the essentials, with a soft shape that goes everywhere.',image:'',amazon:'https://www.amazon.in/s?k=canvas+tote+bag',flipkart:'https://www.flipkart.com/search?q=canvas%20tote%20bag',featured:false},
-  {id:'gsv-05',name:'Soft-touch cushion cover',category:'Textiles',price:799,description:'A little texture and a softer landing for your favourite seat.',image:'',amazon:'https://www.amazon.in/s?k=decorative+cushion+cover',flipkart:'https://www.flipkart.com/search?q=decorative%20cushion%20cover',featured:true},
-  {id:'gsv-06',name:'Calm start candle',category:'Home & Living',price:599,description:'A gentle, warm scent to make a slow evening feel like a small ritual.',image:'',amazon:'https://www.amazon.in/s?k=soy+scented+candle',flipkart:'https://www.flipkart.com/search?q=scented%20candle',featured:false},
-  {id:'gsv-07',name:'Sunday serving bowl',category:'Kitchen',price:899,description:'Made for the centre of the table, from breakfast fruit to late-night snacks.',image:'',amazon:'https://www.amazon.in/s?k=ceramic+serving+bowl',flipkart:'https://www.flipkart.com/search?q=ceramic%20serving%20bowl',featured:false},
-  {id:'gsv-08',name:'Archway accent mirror',category:'Home Decor',price:1499,description:'A sculptural little mirror that brightens a wall and opens up a room.',image:'',amazon:'https://www.amazon.in/s?k=arched+wall+mirror+decor',flipkart:'https://www.flipkart.com/search?q=arched%20wall%20mirror%20decor',featured:false}
-];
-const STORAGE_KEY='gsv-mart-products-v1';
-let products;
-try { const saved=localStorage.getItem(STORAGE_KEY); products=saved?JSON.parse(saved):starterProducts; if(!Array.isArray(products)) products=starterProducts; products=products.map(p=>p.id==='gsv-08'&&p.category==='Electronics'?starterProducts.find(x=>x.id==='gsv-08'):p).filter(p=>p.category!=='Electronics'); } catch { products=starterProducts; }
+let products=[];
+let csrfToken='';
+let selectedPhoto=null,photoPreviewUrl='';
 let activeCategory='All finds',editingId=null,toastTimer;
 const $=id=>document.getElementById(id);
 const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -21,9 +11,70 @@ function renderTabs(){ $('categoryTabs').innerHTML=categories().map(c=>`<button 
 function renderStore(){renderTabs();let q=$('searchInput').value.trim().toLowerCase();let list=products.filter(p=>(activeCategory==='All finds'||p.category===activeCategory)&&(!q||`${p.name} ${p.category} ${p.description}`.toLowerCase().includes(q))).sort((a,b)=>Number(b.featured)-Number(a.featured));$('productGrid').innerHTML=list.map((p,i)=>`<article class="product-card" data-open-product="${escapeHTML(p.id)}"><div class="product-image">${p.image?`<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" loading="lazy" onerror="this.remove()">`:''}${art(p.category)}${p.featured?'<span class="product-badge">GSV FAVOURITE</span>':''}<span class="heart-mark" aria-hidden="true">♡</span></div><div class="product-info"><div class="product-meta"><span>${escapeHTML(p.category||'Everyday')}</span><span>${String(i+1).padStart(2,'0')}</span></div><h3>${escapeHTML(p.name)}</h3><p>${escapeHTML(p.description)}</p><div class="product-price-row"><span class="product-price">${money(p.price)}</span><span class="quick-view">Take a closer look ↗</span></div></div></article>`).join('');$('productGrid').classList.toggle('hidden',!list.length);$('emptyState').classList.toggle('hidden',Boolean(list.length));$('productCount').textContent=`${list.length} thoughtfully chosen ${list.length===1?'find':'finds'}`; }
 function marketplace(p){return `<div class="dialog-market-label">SHOP WITH OUR MARKETPLACE PARTNERS</div><div class="market-buttons"><a class="market-button ${p.amazon?'':'disabled'}" ${p.amazon?`href="${escapeHTML(p.amazon)}" target="_blank" rel="noopener noreferrer"`:''}><span style="color:#df8a19">a</span> &nbsp;Amazon ↗</a><a class="market-button ${p.flipkart?'':'disabled'}" ${p.flipkart?`href="${escapeHTML(p.flipkart)}" target="_blank" rel="noopener noreferrer"`:''}><span style="color:#1768df">f</span> &nbsp;Flipkart ↗</a></div>`;}
 function openProduct(id){let p=products.find(x=>x.id===id);if(!p)return;$('dialogContent').innerHTML=`<div class="dialog-product-art">${art(p.category)}${p.image?`<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" onerror="this.remove()">`:''}</div><div class="dialog-product-copy"><div class="eyebrow"><span class="eyebrow-dot"></span> ${escapeHTML(p.category||'GSV MART FIND')}</div><h2>${escapeHTML(p.name)}</h2><p>${escapeHTML(p.description)}</p><div class="dialog-price">${money(p.price)}</div>${marketplace(p)}<p style="font-size:8px;margin-top:18px">Prices and availability are managed by each marketplace.</p></div>`;$('productDialog').showModal();}
-function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(products));}catch{notify('Could not save in this browser.');}}
 function notify(message){let t=$('toast');t.textContent=message;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2400);}
 function renderAdmin(){let q=$('adminSearch').value.toLowerCase().trim(),list=products.filter(p=>`${p.name} ${p.category}`.toLowerCase().includes(q));$('statAll').textContent=products.length;$('statActive').textContent=products.length;$('statLinks').textContent=products.reduce((n,p)=>n+Number(Boolean(p.amazon))+Number(Boolean(p.flipkart)),0);$('adminCount').textContent=list.length;$('adminRows').innerHTML=list.map(p=>`<tr><td><div class="admin-product">${p.image?`<img class="admin-thumb" src="${escapeHTML(p.image)}" alt="" onerror="this.remove()">`:`<div class="admin-thumb">${art(p.category)}</div>`}<span><b>${escapeHTML(p.name)}</b><small>${escapeHTML(p.description.slice(0,39))}${p.description.length>39?'…':''}</small></span></div></td><td>${escapeHTML(p.category)}</td><td class="admin-price">${money(p.price)}</td><td>${p.amazon?'<span class="mini-market">a</span>':''}${p.flipkart?'<span class="mini-market flip">f</span>':''}${!p.amazon&&!p.flipkart?'—':''}</td><td><span class="status-pill">On display</span></td><td><div class="row-actions"><button data-edit="${escapeHTML(p.id)}">Edit</button><button data-delete="${escapeHTML(p.id)}">Delete</button></div></td></tr>`).join('');$('adminEmpty').classList.toggle('hidden',list.length!==0);}
-function editProduct(id){editingId=id||null;$('productForm').reset();let p=products.find(x=>x.id===id);$('formTitle').textContent=p?'Edit product':'Add a product';if(p)for(let [key,value] of Object.entries(p)){let input=$('productForm').elements.namedItem(key);if(input){if(input.type==='checkbox')input.checked=Boolean(value);else input.value=value??'';}}$('formDialog').showModal();}
-document.addEventListener('click',e=>{let tab=e.target.closest('[data-category]');if(tab){activeCategory=tab.dataset.category;renderStore();}let card=e.target.closest('[data-open-product]');if(card)openProduct(card.dataset.openProduct);let edit=e.target.closest('[data-edit]');if(edit)editProduct(edit.dataset.edit);let del=e.target.closest('[data-delete]');if(del){let p=products.find(x=>x.id===del.dataset.delete);if(p&&confirm(`Remove “${p.name}” from the catalogue?`)){products=products.filter(x=>x.id!==p.id);save();renderAdmin();renderStore();notify('Product removed.');}}if(e.target.matches('[data-close]'))e.target.closest('dialog').close();if(e.target===$('productDialog')||e.target===$('formDialog'))e.target.close();});
-$('searchInput').addEventListener('input',renderStore);$('adminSearch').addEventListener('input',renderAdmin);$('adminOpen').addEventListener('click',()=>{renderAdmin();$('adminDialog').showModal();});$('addProduct').addEventListener('click',()=>editProduct());$('productForm').addEventListener('submit',e=>{e.preventDefault();let f=new FormData(e.currentTarget);let data={name:f.get('name').trim(),category:f.get('category'),price:Number(f.get('price')),description:f.get('description').trim(),image:f.get('image').trim(),amazon:f.get('amazon').trim(),flipkart:f.get('flipkart').trim(),featured:f.has('featured')};if(editingId){products=products.map(p=>p.id===editingId?{...p,...data}:p);}else products.unshift({id:`gsv-${Date.now()}`, ...data});save();renderAdmin();renderStore();$('formDialog').close();notify(editingId?'Product updated.':'Product added to your catalogue.');});$('menuToggle').addEventListener('click',()=>document.querySelector('.main-nav').classList.toggle('open'));$('searchToggle').addEventListener('click',()=>{document.querySelector('#collection').scrollIntoView({behavior:'smooth'});setTimeout(()=>$('searchInput').focus(),450);});$('year').textContent=new Date().getFullYear();renderStore();
+function editProduct(id){editingId=id||null;$('productForm').reset();let p=products.find(x=>x.id===id);$('formTitle').textContent=p?'Edit product':'Add a product';if(p)for(let [key,value] of Object.entries(p)){let input=$('productForm').elements.namedItem(key);if(input){if(input.type==='checkbox')input.checked=Boolean(value);else input.value=value??'';}}selectedPhoto=null;showPhotoPreview(p?.image || '');$('formDialog').showModal();}
+
+async function api(path, options={}) {
+  let response;
+  try { response=await fetch(path,{credentials:'same-origin',...options,headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken,...options.headers}}); }
+  catch { throw new Error('Could not reach the website server. Please try again.'); }
+  const data=await response.json();
+  if(!response.ok){if(response.status===401){csrfToken='';$('formDialog').close();$('adminDialog').close();if(!$('loginDialog').open)$('loginDialog').showModal();}throw new Error(data.error || 'Please try again.');}
+  return data;
+}
+async function loadProducts(){products=(await api('/api/products')).products;if(!categories().includes(activeCategory))activeCategory='All finds';renderStore();renderAdmin();}
+async function openAdmin(){try{const session=await api('/api/auth/session');if(session.authenticated){csrfToken=session.csrf;await loadProducts();$('adminDialog').showModal();}else{$('loginError').textContent='';$('loginDialog').showModal();}}catch(error){notify(error.message);}}
+document.addEventListener('click',async e=>{
+  let tab=e.target.closest('[data-category]');if(tab){activeCategory=tab.dataset.category;renderStore();}
+  let card=e.target.closest('[data-open-product]');if(card)openProduct(card.dataset.openProduct);
+  let edit=e.target.closest('[data-edit]');if(edit)editProduct(edit.dataset.edit);
+  let del=e.target.closest('[data-delete]');
+  if(del){let p=products.find(x=>x.id===del.dataset.delete);if(p&&confirm(`Remove “${p.name}” from the catalogue?`)){del.disabled=true;try{await api(`/api/products/${encodeURIComponent(p.id)}`,{method:'DELETE'});await loadProducts();notify('Product removed.');}catch(error){notify(error.message);}finally{del.disabled=false;}}}
+  if(e.target.matches('[data-close]'))e.target.closest('dialog').close();
+  if(e.target===$('productDialog')||e.target===$('formDialog'))e.target.close();
+});
+$('searchInput').addEventListener('input',renderStore);
+$('adminSearch').addEventListener('input',renderAdmin);
+$('adminOpen').addEventListener('click',openAdmin);
+$('addProduct').addEventListener('click',()=>editProduct());
+$('productForm').addEventListener('submit',async e=>{
+  e.preventDefault();const f=new FormData(e.currentTarget);
+  const data={name:f.get('name').trim(),category:f.get('category'),price:Number(f.get('price')),description:f.get('description').trim(),image:f.get('image').trim(),amazon:f.get('amazon').trim(),flipkart:f.get('flipkart').trim(),featured:f.has('featured')};
+  $('saveProduct').disabled=true;
+  try{if(selectedPhoto){const photo=await preparePhoto(selectedPhoto);data.image=(await api('/api/uploads',{method:'POST',headers:{'Content-Type':'image/jpeg'},body:photo})).image;selectedPhoto=null;$('productForm').elements.image.value=data.image;}await api(editingId?`/api/products/${encodeURIComponent(editingId)}`:'/api/products',{method:editingId?'PUT':'POST',body:JSON.stringify(data)});await loadProducts();$('formDialog').close();notify(editingId?'Product updated.':'Product added to your catalogue.');}
+  catch(error){notify(error.message);}finally{$('saveProduct').disabled=false;}
+});
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();$('loginSubmit').disabled=true;$('loginError').textContent='';
+  const form=e.currentTarget,f=new FormData(form);
+  try{const session=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:f.get('email'),password:f.get('password')})});csrfToken=session.csrf;form.reset();await loadProducts();$('loginDialog').close();$('adminDialog').showModal();}
+  catch(error){$('loginError').textContent=error.message;}finally{$('loginSubmit').disabled=false;}
+});
+$('adminLogout').addEventListener('click',async()=>{try{await api('/api/auth/logout',{method:'POST',body:'{}'});csrfToken='';$('adminDialog').close();notify('Signed out.');}catch(error){notify(error.message);}});
+$('menuToggle').addEventListener('click',()=>document.querySelector('.main-nav').classList.toggle('open'));
+$('searchToggle').addEventListener('click',()=>{document.querySelector('#collection').scrollIntoView({behavior:'smooth'});setTimeout(()=>$('searchInput').focus(),450);});
+$('year').textContent=new Date().getFullYear();
+loadProducts().catch(error=>{$('productCount').textContent='Catalogue unavailable';$('emptyState').classList.remove('hidden');$('emptyState').innerHTML='<h3>The catalogue could not load.</h3><p>Open the website through its server and refresh to try again.</p>';notify(error.message);});
+
+function showPhotoPreview(url){
+  if(photoPreviewUrl){URL.revokeObjectURL(photoPreviewUrl);photoPreviewUrl='';}
+  $('photoPreview').classList.toggle('hidden',!url);
+  if(url)$('photoPreviewImage').src=url;else $('photoPreviewImage').removeAttribute('src');
+  $('photoHint').textContent=url?'This photo will appear in the catalogue.':'No photo? We’ll use a placeholder.';
+}
+$('productPhoto').addEventListener('change',()=>{
+  const file=$('productPhoto').files[0];
+  if(!file)return;
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024){$('productPhoto').value='';notify('Choose a JPEG, PNG or WebP photo smaller than 10 MB.');return;}
+  selectedPhoto=file;showPhotoPreview('');photoPreviewUrl=URL.createObjectURL(file);$('photoPreviewImage').src=photoPreviewUrl;$('photoPreview').classList.remove('hidden');$('photoHint').textContent='Photo selected. Save the product to upload it.';
+});
+$('removePhoto').addEventListener('click',()=>{selectedPhoto=null;$('productPhoto').value='';$('productForm').elements.image.value='';showPhotoPreview('');});
+async function preparePhoto(file){
+  let bitmap;try{bitmap=await createImageBitmap(file);}catch{throw new Error('This photo could not be opened. Please choose another image.');}
+  try{
+    const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    const ctx=canvas.getContext('2d');ctx.fillStyle='#f7f5f0';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.88));if(!blob)throw new Error('Photo could not be prepared.');return blob;
+  }finally{bitmap.close();}
+}
